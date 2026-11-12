@@ -91,7 +91,35 @@ Resultado esperado: dos objetos (`fecha=2026-10-01/entregas.csv` y `fecha=2026-1
 12 registros de datos en total. No existe ningún objeto para `fecha=2026-10-03`.
 
 ## 5. Consultas y resultados iniciales
-_Pendiente de documentar._
+
+Las consultas están en `consultas/` y se ejecutan en el workgroup `entregas_wg` con el script
+`scripts/ejecutar_athena.sh`, que lanza la consulta, espera su finalización, guarda el resultado en CSV
+(sin comillas, finales de línea CRLF, igual que las referencias suministradas) y registra la ejecución en `evidencias/ejecuciones_athena.csv`
+(`etapa`, `archivo_sql`, `id_ejecucion`, `archivo_resultado`). Se ejecuta desde la raíz del repositorio:
+
+```bash
+bash scripts/ejecutar_athena.sh inicial consultas/intentos_por_fecha_estado.sql \
+  resultados/inicial/intentos_por_fecha_estado.csv
+
+bash scripts/ejecutar_athena.sh inicial consultas/porcentaje_exito_por_fecha_ciudad.sql \
+  resultados/inicial/porcentaje_exito_por_fecha_ciudad.csv
+
+bash scripts/ejecutar_athena.sh inicial consultas/duracion_promedio_2026-10-02.sql \
+  resultados/inicial/duracion_promedio_2026-10-02.csv
+```
+
+Comparación con las referencias suministradas (sin salida = idénticos):
+
+```bash
+diff resultados/inicial/intentos_por_fecha_estado.csv resultados_esperados/intentos_por_fecha_estado_inicial.csv
+diff resultados/inicial/porcentaje_exito_por_fecha_ciudad.csv resultados_esperados/porcentaje_exito_por_fecha_ciudad_inicial.csv
+diff resultados/inicial/duracion_promedio_2026-10-02.csv resultados_esperados/duracion_promedio_2026-10-02.csv
+```
+
+Notas de diseño de las consultas:
+- Ninguna consulta filtra por rango de fechas (salvo el promedio, que pide solo el 2026-10-02), por lo que el mismo SQL sirve para ambas etapas.
+- El porcentaje usa `DOUBLE` para evitar división entera y `CAST ... AS DECIMAL(5,2)` para conservar dos decimales; el denominador cuenta todos los estados.
+- El promedio filtra `estado = 'entregado'` para no incluir los ceros de los intentos fallidos.
 
 ## 6. Incorporación de una nueva fecha (día 3)
 _Pendiente de documentar._

@@ -1,0 +1,4 @@
+etapa,archivo_sql,id_ejecucion,archivo_resultado
+inicial,consultas/intentos_por_fecha_estado.sql,00c9403e-f6fb-4020-91ed-cc238fdcf1c3,resultados/inicial/intentos_por_fecha_estado.csv
+inicial,consultas/porcentaje_exito_por_fecha_ciudad.sql,45b172ff-f3ea-42e4-a6ef-01dbd38609ce,resultados/inicial/porcentaje_exito_por_fecha_ciudad.csv
+inicial,consultas/duracion_promedio_2026-10-02.sql,56c150c5-a9ff-47f1-ad35-bc4e59e3c30d,resultados/inicial/duracion_promedio_2026-10-02.csv
