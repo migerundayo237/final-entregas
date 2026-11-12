@@ -158,4 +158,29 @@ crawlers, ni `MSCK REPAIR TABLE`, ni `ALTER TABLE ADD PARTITION`), solo se sube 
 El promedio de duración sigue correspondiendo al 2026-10-02 y conserva su resultado de la etapa inicial.
 
 ## 7. Limpieza
-_Pendiente de documentar._
+
+Las evidencias de la entrega (Terraform, outputs, resultados, ejecuciones de Athena y respuestas) se guardaron
+y se subieron al repositorio **antes** de eliminar los recursos.
+
+1. Eliminar todos los recursos del ejercicio con Terraform y guardar la evidencia:
+   ```bash
+   cd infraestructura
+   terraform destroy -no-color -auto-approve 2>&1 | tee ../evidencias/eliminacion_terraform.txt
+   ```
+   El bucket (`force_destroy = true`) se vacía automáticamente, incluidos los CSV de `entregas/` y los resultados de
+   `resultados-athena/`, y el workgroup de Athena (`force_destroy = true`) se elimina con su historial.
+   Se destruyen los 5 recursos: bucket S3, bloqueo de acceso público, base de datos Glue, tabla Glue y workgroup.
+2. Verificar que ya no existen y añadir la comprobación a la evidencia:
+   ```bash
+   cd ..
+   {
+     echo; echo "=== Verificacion posterior a la eliminacion ==="
+     aws s3api head-bucket --bucket entregas-examen-966273136781 --region us-east-2 2>&1 || true
+     aws glue get-database --name entregas_db --region us-east-2 --no-cli-pager 2>&1 || true
+     aws athena get-work-group --work-group entregas_wg --region us-east-2 --no-cli-pager 2>&1 || true
+   } >> evidencias/eliminacion_terraform.txt
+   ```
+   Resultado esperado: `404` / `Not Found` para el bucket, `EntityNotFoundException` para la base de datos e
+   `InvalidRequestException` (workgroup no encontrado) para Athena.
+3. Los archivos de estado de Terraform (`*.tfstate`) y la carpeta `.terraform/` permanecen solo en la máquina local
+   y están excluidos por `.gitignore`.
