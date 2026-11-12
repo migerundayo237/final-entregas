@@ -1,0 +1,30 @@
+# --- Terraform: estado y carpeta local ---
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+*.auto.tfvars
+
+# --- Credenciales ---
+.env
+.env.*
+*.pem
+*.key
+.aws/
+credentials
+aws-credentials*
+*secret*
+
+# --- Sistema / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
