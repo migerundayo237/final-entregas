@@ -37,10 +37,58 @@ ni registro manual de particiones.
 ```
 
 ## 3. Configuración y despliegue
-_Pendiente de documentar._
+
+Todos los comandos se ejecutan desde la raíz del repositorio salvo que se indique otra cosa.
+
+1. Verificar las credenciales y la cuenta:
+   ```bash
+   aws sts get-caller-identity
+   ```
+2. Desplegar la infraestructura (región `us-east-2`, definida en `infraestructura/variables.tf`):
+   ```bash
+   cd infraestructura
+   terraform init
+   terraform fmt
+   terraform validate
+   terraform apply -no-color -auto-approve 2>&1 | tee ../evidencias/aplicacion_terraform.txt
+   terraform output -json > ../evidencias/outputs.json
+   cd ..
+   ```
+3. Recursos creados (5): bucket S3 privado `entregas-examen-<id de cuenta>` con bloqueo de acceso público,
+   base de datos Glue `entregas_db`, tabla externa `entregas` con partition projection, y workgroup de Athena
+   `entregas_wg` con resultados en `s3://<bucket>/resultados-athena/`.
+4. Propiedades de proyección de la tabla (todas definidas en Terraform, sin particiones individuales):
+   `projection.fecha.type=date`, `format=yyyy-MM-dd`, `range=2026-10-01,2026-10-03`, `interval=1`,
+   `interval.unit=DAYS` y `storage.location.template=s3://<bucket>/entregas/fecha=${fecha}/`.
+5. Verificación de la plantilla de ubicación registrada en Glue:
+   ```bash
+   aws glue get-table --database-name entregas_db --name entregas --region us-east-2 \
+     --no-cli-pager --query 'Table.Parameters."storage.location.template"' --output text
+   ```
 
 ## 4. Carga de archivos - etapa inicial (días 1 y 2)
-_Pendiente de documentar._
+
+Solo se cargan los archivos de los días 1 y 2, uno por uno (sin `--recursive` ni `sync`). El archivo del día 3
+permanece únicamente en local hasta la sección 6.
+
+```bash
+BUCKET=$(terraform -chdir=infraestructura output -raw bucket)
+
+aws s3 cp data/entregas/fecha=2026-10-01/entregas.csv \
+  s3://$BUCKET/entregas/fecha=2026-10-01/entregas.csv --region us-east-2
+
+aws s3 cp data/entregas/fecha=2026-10-02/entregas.csv \
+  s3://$BUCKET/entregas/fecha=2026-10-02/entregas.csv --region us-east-2
+```
+
+Verificación de que solo existen los dos objetos esperados:
+
+```bash
+aws s3 ls s3://$BUCKET/entregas/ --recursive --region us-east-2
+```
+
+Resultado esperado: dos objetos (`fecha=2026-10-01/entregas.csv` y `fecha=2026-10-02/entregas.csv`),
+12 registros de datos en total. No existe ningún objeto para `fecha=2026-10-03`.
 
 ## 5. Consultas y resultados iniciales
 _Pendiente de documentar._
