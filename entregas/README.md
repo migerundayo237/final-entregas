@@ -122,7 +122,40 @@ Notas de diseño de las consultas:
 - El promedio filtra `estado = 'entregado'` para no incluir los ceros de los intentos fallidos.
 
 ## 6. Incorporación de una nueva fecha (día 3)
-_Pendiente de documentar._
+
+Sin modificar la infraestructura ni las propiedades de la tabla (no se ejecutó `terraform apply` de nuevo, ni
+crawlers, ni `MSCK REPAIR TABLE`, ni `ALTER TABLE ADD PARTITION`), solo se sube el archivo y se consulta.
+
+1. Subir únicamente el archivo del día 3:
+   ```bash
+   BUCKET=$(terraform -chdir=infraestructura output -raw bucket)
+
+   aws s3 cp data/entregas/fecha=2026-10-03/entregas.csv \
+     s3://$BUCKET/entregas/fecha=2026-10-03/entregas.csv --region us-east-2
+
+   aws s3 ls s3://$BUCKET/entregas/ --recursive --region us-east-2
+   ```
+2. Verificación del tercer día (`consultas/verificacion_tercer_dia.sql` contiene tres sentencias, cada una se
+   ejecuta por separado con el cuarto argumento del script):
+   ```bash
+   # 1) los seis registros de 2026-10-03
+   bash scripts/ejecutar_athena.sh final consultas/verificacion_tercer_dia.sql resultados/final/verificacion_tercer_dia.csv 1
+   # 2) total de registros de la tabla (esperado: 18)
+   bash scripts/ejecutar_athena.sh final consultas/verificacion_tercer_dia.sql resultados/final/verificacion_total_tabla.csv 2
+   # 3) conteo por estado de 2026-10-03
+   bash scripts/ejecutar_athena.sh final consultas/verificacion_tercer_dia.sql resultados/final/verificacion_conteo_estado_tercer_dia.csv 3
+   ```
+3. Ejecución de nuevo de las consultas agregadas sobre todo el rango (el SQL no cambió, no tenían filtro de fechas):
+   ```bash
+   bash scripts/ejecutar_athena.sh final consultas/intentos_por_fecha_estado.sql resultados/final/intentos_por_fecha_estado.csv
+   bash scripts/ejecutar_athena.sh final consultas/porcentaje_exito_por_fecha_ciudad.sql resultados/final/porcentaje_exito_por_fecha_ciudad.csv
+   ```
+4. Comparación con las referencias finales:
+   ```bash
+   diff resultados/final/intentos_por_fecha_estado.csv resultados_esperados/intentos_por_fecha_estado_final.csv
+   diff resultados/final/porcentaje_exito_por_fecha_ciudad.csv resultados_esperados/porcentaje_exito_por_fecha_ciudad_final.csv
+   ```
+El promedio de duración sigue correspondiendo al 2026-10-02 y conserva su resultado de la etapa inicial.
 
 ## 7. Limpieza
 _Pendiente de documentar._
